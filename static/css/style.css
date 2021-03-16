@@ -1,0 +1,42 @@
+.modal-dialog {
+    width: 1000px;
+    margin: 60px auto;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 200px !important;
+}
+
+.json-table {
+    margin-bottom: 0;
+}
+
+.json-table td, .break-word {
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.row-yellow {
+    background-color: #faf2cc;
+}
+
+.row-green {
+    background-color: #dff0d8;
+}
+
+.row-red {
+    background-color: #f2dede;
+}
+
+.row-blue {
+    background-color: #d9edf7;
+}
+
+.row-purple {
+    background-color: #ecd1ff;
+}
+
+.select2-results {
+    max-height: 350px !important;
+}

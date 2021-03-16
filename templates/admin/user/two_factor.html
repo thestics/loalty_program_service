@@ -1,0 +1,35 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/custom_lib.html' as lib with context %}
+
+{% block head %}
+  {{ super() }}
+  {{ lib.form_css() }}
+{% endblock %}
+{% block body %}
+  <h3 class="text-center">
+    {{ form_title }}
+  </h3>
+  {% block create_form %}
+    {% call lib.form_tag(action=None) %}
+      {{ lib.render_form_fields(form, form_opts=form_opts) }}
+      <div class="text-center">
+        <h4>Send this QR code to user</h4>
+        <div id="qrcode"></div>
+      </div>
+      {{ lib.render_form_buttons(None, is_modal=False, base_button_text='Save QR') }}
+    {% endcall %}
+  {% endblock %}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  {{ lib.form_js() }}
+  <script src="{{ url_for("static", filename="js/qr/jquery.qrcode.js") }}"></script>
+  <script src="{{ url_for("static", filename="js/qr/qrcode.js") }}"></script>
+  <script src="{{ url_for("static", filename="js/two_factor.js") }}"></script>
+  <script>
+      $(window).on('load', function() {
+          initTwoFactor($('#qrcode'), $('#secret'), "{{ user.email }}", 200);
+      });
+  </script>
+{% endblock %}
