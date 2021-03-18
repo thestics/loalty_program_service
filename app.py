@@ -1,13 +1,15 @@
 import datetime
+import traceback
 
-from flask import Flask, url_for, session, flash, redirect
+from flask import Flask, url_for, session, flash, redirect, request
 from flask_security import Security
 from flask_security.core import _context_processor
 from flask_admin import Admin, helpers as admin_helpers
 
 from models.admin import user_datastore, admin_tables
-from models.loyalty import loyalty_tables, DiscountLevel
+from models.loyalty import loyalty_tables
 from models.utils import db_wrapper, init_db
+from models.loyalty import ErrorLog
 from config import ProductionConfig, DevelopmentConfig
 from src.login import CustomLoginForm, create_blueprint
 from src.views import init_views, IndexView
@@ -76,11 +78,17 @@ def _init_context_processors(app, admin, security):
         session.permanent = True
         app.permanent_session_lifetime = session_lifetime
 
-    # @app.errorhandler(Exception)
-    # def handle_exceptions(exc):
-    #     flash('Unexpected error: {}'.format(exc), 'error')
-    #
-    #     return redirect(url_for('admin.index'))
+    @app.errorhandler(Exception)
+    def handle_exceptions(exc):
+        flash('Unexpected error: {}'.format(exc), 'error')
+        ErrorLog.create(request_data=request.data,
+                        request_ip=request.remote_addr,
+                        request_url=request.url,
+                        request_method=request.method,
+                        error=str(exc),
+                        traceback=traceback.format_exc())
+
+        return redirect(url_for('admin.index'))
 
     # open db connections
     @app.before_request
