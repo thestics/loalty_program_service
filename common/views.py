@@ -447,20 +447,12 @@ class DefaultMethodView(MethodView):
     def post(self, cls):
         form = self.FormClass()
         if form.validate_on_submit():
-
-            request_data, response_data = self.process_form(cls, form)
-
-            request_data = self.to_table(request_data)
-            response_data = self.to_table(response_data)
-
+            self.process_form(cls, form)
+            # request_data, response_data = self.process_form(cls, form)
             flash('Success', category='success')
-        else:
-            request_data = response_data = None
 
         return cls.render(self.template,
                           form=form,
-                          request_data=request_data,
-                          response_data=response_data,
                           **self.template_args)
 
     def process_form(self, cls, form):
