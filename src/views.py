@@ -1,3 +1,4 @@
+import copy
 from itertools import groupby
 
 from flask import flash, abort, Markup, redirect, url_for, current_app, request
@@ -56,7 +57,7 @@ class DiscountLevelView(SecuredView, DetailView, CustomRowView):
 class CustomerView(SecuredView, DetailView, CustomRowView):
     column_list = ('id', 'name', 'phone', 'amount_of_purchases',
                    'discount_level', 'birthday', 'address',
-                   'family_birthdays', 'created', 'updated')
+                   'created', 'updated')
     column_sortable_list = ('id', 'name', 'birthday', 'created')
     column_default_sort = ('id', True)
     column_filters = (
@@ -104,8 +105,7 @@ class UserView(OnlySuperUser, DetailView):
     )
 
     form_edit_rules = (
-        rules.FieldSet(('password', 'active', 'roles',
-                        )),
+        rules.FieldSet(('password', 'active', 'roles')),
     )
 
     form_extra_fields = {
@@ -372,6 +372,16 @@ class LoyaltyClientView(SecuredWithCategory, BaseView):
         }
 
         api_method = 'create_customer'
+
+        def process_form(self, cls, form):
+            form_data = copy.deepcopy(form.data)
+            del form_data['csrf_token']
+            amount = form_data['amount_of_purchases']
+            discount_id = DiscountLevel.get_by_amount(amount)
+            form_data['discount_level'] = discount_id if discount_id else 1
+
+            return getattr(cls.client, self.api_method)(
+                **{k: v for k, v in form_data.items() if v})
 
 
 def get_views(exclude=tuple()):
