@@ -17,6 +17,13 @@ class DiscountLevel(BaseModel):
     extra_data = BinaryJSONField(default=dict())
     processing = BooleanField(default=False, null=True)
 
+    @classmethod
+    def get_by_amount(cls, amount):
+        try:
+            return cls.select().where(cls.minimal_amount <= amount).get()
+        except cls.DoesNotExist:
+            return None
+
 
 class Customer(BaseModel):
     class Meta:
@@ -24,11 +31,10 @@ class Customer(BaseModel):
 
     name = CharField()
     phone = BigIntegerField()
-    amount_of_purchases = DecimalField()
+    amount_of_purchases = DecimalField(default=0)
     discount_level = ForeignKeyField(DiscountLevel, default=1)
     birthday = DateField()
     address = CharField(null=True)
-    family_birthdays = JSONField()
     created = DateTimeField(default=peewee_datetime.datetime.now)
     updated = DateTimeField(null=True)
 
