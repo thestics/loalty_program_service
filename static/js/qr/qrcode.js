@@ -47,7 +47,7 @@ function QRCode(typeNumber, errorCorrectLevel) {
 	this.modules = null;
 	this.moduleCount = 0;
 	this.dataCache = null;
-	this.dataList = new Array();
+	this.dataList = [];
 }
 
 QRCode.prototype = {
@@ -1163,7 +1163,7 @@ QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
 
 	var length = rsBlock.length / 3;
 
-	var list = new Array();
+	var list = [];
 
 	for (var i = 0; i < length; i++) {
 
@@ -1200,7 +1200,7 @@ QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
 //---------------------------------------------------------------------
 
 function QRBitBuffer() {
-	this.buffer = new Array();
+	this.buffer = [];
 	this.length = 0;
 }
 

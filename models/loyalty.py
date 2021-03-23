@@ -1,7 +1,7 @@
 from peewee import (CharField, DecimalField, ForeignKeyField,
                     BigIntegerField, DateTimeField, BooleanField, TextField,
                     DateField, datetime as peewee_datetime)
-from playhouse.postgres_ext import BinaryJSONField, JSONField
+from playhouse.postgres_ext import BinaryJSONField
 
 from models.utils import BaseModel
 

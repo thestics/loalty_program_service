@@ -5,7 +5,7 @@ from pytz import timezone
 
 env = Env()
 
-env.read_env('/Users/involve/loalty_program_service/.env')
+env.read_env('.env')
 
 with env.prefixed("APP_"):
     class Config(object):

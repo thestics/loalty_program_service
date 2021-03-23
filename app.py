@@ -25,7 +25,8 @@ admin = Admin(base_template='admin/custom_master.html',
 
 def create_app(config=None,
                perform_views_init=True,
-               perform_context_init=True):
+               perform_context_init=True,
+               create_db=False):
     config = config or ProductionConfig
 
     app = Flask(config.PROJECT, instance_relative_config=True)
@@ -34,7 +35,8 @@ def create_app(config=None,
 
     app.config['DATABASE'] = app.config['DB']
     db_wrapper.init_app(app)
-    # init_db(admin_tables + loyalty_tables)
+    if create_db:
+        init_db(admin_tables + loyalty_tables)
 
     sec = security.init_app(app,
                             datastore=user_datastore,

@@ -231,10 +231,15 @@ def edit_superuser(config, gen_pass):
 @click.option('--config',
               type=click.Choice(['production', 'development', 'testing']),
               default='production')
-def create_base_roles(config):
+@click.option('--init-db',
+              is_flag=True,
+              default=False,
+              help='Use on first launch to create database.')
+def create_base_roles(config, init_db):
     app = create_app(config=get_config(config),
                      perform_views_init=False,
-                     perform_context_init=False)
+                     perform_context_init=False,
+                     create_db=init_db)
 
     with app.app_context():
         role = user_datastore.find_or_create_role('superuser')
