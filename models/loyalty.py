@@ -30,7 +30,7 @@ class Customer(BaseModel):
         db_table = "customers"
 
     name = CharField()
-    phone = BigIntegerField()
+    phone = CharField()
     amount_of_purchases = DecimalField(default=0)
     discount_level = ForeignKeyField(DiscountLevel, default=1)
     birthday = DateField()

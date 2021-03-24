@@ -14,7 +14,7 @@ from common.fields import PrettyJsonField
 
 class CustomerCreationForm(FlaskForm):
     name = wtfields.StringField(validators=[InputRequired()])
-    phone = wtfields.IntegerField(validators=[InputRequired()])
+    phone = wtfields.StringField(validators=[InputRequired()])
     amount_of_purchases = wtfields.IntegerField('Total amount of purchases',
                                                 validators=[InputRequired(),
                                                             NumberRange(min=0)])
