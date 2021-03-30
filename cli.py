@@ -132,7 +132,6 @@ def create_superuser(config, gen_pass):
                                     hide_input=True,
                                     value_proc=validate_password)
 
-
         role = user_datastore.find_or_create_role(
             name='superuser', description='Superuser'
         )
@@ -254,8 +253,51 @@ def create_base_roles(config, init_db):
                             'Cannot be deleted/edited')
         role.save()
         success('Role manager was created')
+        role = user_datastore.find_or_create_role('cashier')
+        role.description = ('Can view customers table |'
+                            'Can add new customers')
+        role.permissions['api'] = ['view', 'purchase']
+        success('Role cashier was created')
+        role.save()
+
+
+@cli.command()
+@click.option('--config',
+              type=click.Choice(['production', 'development', 'testing']),
+              default='production')
+def create_test_roles(config):
+    app = create_app(config=get_config(config),
+                     perform_views_init=False,
+                     perform_context_init=False)
+
+    with app.app_context():
+        super_email = 'super@test.com'
+        super_password = '01234567890'
+
+        cashier_email = 'cashier@test.com'
+        cashier_pass = '01234567890'
+
+        manager_email = 'manager@test.com'
+        manager_pass = '01234567890'
+
+        superuser = user_datastore.create_user(roles=['superuser'],
+                                               email=super_email,
+                                               password=super_password)
+        superuser.save()
+        success(f'Superuser email: {super_email}, pass: {super_password} created.')
+
+        cashier = user_datastore.create_user(roles=['cashier'],
+                                             email=cashier_email,
+                                             password=cashier_pass)
+        cashier.save()
+        success(f'Cashier email: {cashier_email}, pass: {cashier_pass} created.')
+
+        manager = user_datastore.create_user(roles=['manager'],
+                                             email=manager_email,
+                                             password=manager_pass)
+        success(f'Manager email: {manager_email}, pass: {manager_pass} created.')
+        manager.save()
 
 
 if __name__ == '__main__':
     cli()
-    pw = 'TESTTESTTESTTEST'

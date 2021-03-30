@@ -1,0 +1,43 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/custom_lib.html' as lib with context %}
+{% from 'admin/lib.html' import extra with context %} {# backward compatible #}
+{% block head %}
+  {{ super() }}
+  {{ lib.form_css() }}
+{% endblock %}
+{% block body %}
+  <h3 class="text-center">
+    {{ form_title }}
+  </h3>
+  {% block create_form %}
+    {{ lib.render_form(form, return_url, extra(), form_opts) }}
+  {% endblock %}
+
+  <div class="row">
+    {% if request_data %}
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading text-center">Request Data</div>
+          <div class="panel-body">
+            {{ request_data }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    {% if response_data %}
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading text-center">Response Data</div>
+          <div class="panel-body">
+            {{ response_data }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  {{ lib.form_js() }}
+{% endblock %}

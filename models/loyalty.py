@@ -1,5 +1,6 @@
 from peewee import (CharField, DecimalField, ForeignKeyField,
                     BigIntegerField, DateTimeField, BooleanField, TextField,
+                    IntegerField,
                     DateField, datetime as peewee_datetime)
 from playhouse.postgres_ext import BinaryJSONField
 
@@ -14,8 +15,9 @@ class DiscountLevel(BaseModel):
     name = CharField()
     minimal_amount = DecimalField()
     created = DateTimeField(default=peewee_datetime.datetime.now)
-    extra_data = BinaryJSONField(default=dict())
+    # extra_data = BinaryJSONField(default=dict())
     processing = BooleanField(default=False, null=True)
+    discount_percent = IntegerField(default=0, help_text='in [0, 1]')
 
     @classmethod
     def get_by_amount(cls, amount):
@@ -30,6 +32,7 @@ class Customer(BaseModel):
         db_table = "customers"
 
     name = CharField()
+    card_id = CharField(unique=True, null=False, index=True)
     phone = BigIntegerField()
     amount_of_purchases = DecimalField(default=0)
     discount_level = ForeignKeyField(DiscountLevel, default=1)
@@ -39,8 +42,8 @@ class Customer(BaseModel):
     updated = DateTimeField(null=True)
 
     @staticmethod
-    def get_for_update(wallet_id):
-        return Customer.select().where(Customer.id == wallet_id).for_update().first()
+    def get_for_update(card_id):
+        return Customer.select().where(Customer.card_id == card_id).for_update().first()
 
     def update_balance(self, amount):
         Customer.update(balance=Customer.balance + amount).where(Customer.id == self.id).execute()

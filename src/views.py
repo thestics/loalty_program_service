@@ -29,7 +29,7 @@ from common.utils import camel2snake, snake2camel, generate_password
 from common.widgets import PasswordWidget, ExtendedSelect2Widget
 from common.fields import ExtendedSelectField, PrettyJsonField
 
-from src.forms import (CustomerCreationForm)
+from src.forms import (CustomerCreationForm, PurchaseForm)
 from models.loyalty import (DiscountLevel, Customer, ErrorLog)
 from models.admin import (User, Role, UserRoles, user_datastore)
 
@@ -382,6 +382,35 @@ class LoyaltyClientView(SecuredWithCategory, BaseView):
 
             return getattr(cls.client, self.api_method)(
                 **{k: v for k, v in form_data.items() if v})
+
+    @expose_plugview('/purchase')
+    class PurchaseView(DefaultMethodView):
+        FormClass = PurchaseForm
+
+        template_args = {
+            'form_title': 'Customer Creation'
+        }
+
+        api_method = 'create_customer'
+
+        def process_form(self, cls, form):
+            form_data = copy.deepcopy(form.data)
+            customer_card_id = form_data['client_card_id']
+            try:
+                purchase_sum = int(form_data['purchase_sum'])
+            except:
+                return redirect(url_for('API/purchase'))
+
+            try:
+                customer = Customer.get_for_update(customer_card_id)
+            except:
+                return redirect(url_for('API/purchase'))
+            discount = customer.discount_level
+            purchase_sum -= purchase_sum * discount.discount_percent
+
+
+
+
 
 
 def get_views(exclude=tuple()):
