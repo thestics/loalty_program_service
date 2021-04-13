@@ -1,303 +1,57 @@
-import copy
-import re
-import socket
-from functools import partial
-
+from app import db
+from app import app
 import click
-from peewee_migrate import Router
-from flask_security.utils import verify_password, hash_password
-
-from app import create_app
-from config import ProductionConfig, DevelopmentConfig, TestingConfig
-from models.admin import db_wrapper, user_datastore
-from common.utils import generate_password
+from models.admin import user_datastore
+from flask_security.utils import hash_password
+from models.loyalty import Levels
 
 
-def get_config(config_type):
-    if config_type == 'production':
-        config = ProductionConfig
-    elif config_type == 'development':
-        config = DevelopmentConfig
-    elif config_type == 'testing':
-        config = TestingConfig
-    else:
-        raise error('Invalid config')
-
-    return copy.deepcopy(config)
-
-
-def validate_mail(email):
-    match = re.match(
-        '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+'
-        '(\.[a-z0-9-]+)*(\.[a-z]{2,4})$',
-        email)
-
-    if match is None:
-        raise error('Invalid email')
-
-    return email
-
-
-def validate_password(password, allowed_blank='-'):
-    if len(password) == allowed_blank:
-        return
-
-    if len(password) <= 10:
-        raise error('Password must be longer than 10 symbols')
-
-    return password
-
-
-def validate_ips(string):
-    ips = []
-
-    if string == '-':
-        return
-
-    for ip in string.split(','):
+@click.command()
+@click.option('--init-db', is_flag=True)
+@click.option('--create-superuser', is_flag=True)
+def create_roles(init_db, create_superuser):
+    if init_db:
         try:
-            socket.inet_aton(ip)
-        except socket.error:
-            raise error(f'Invalid ip: {ip}')
-
-        ips.append(ip)
-
-    return ips
-
-
-def to_snake(string):
-    return string.replace(' ', '_').lower()
-
-
-def error(msg):
-    return click.ClickException(click.style(msg, fg='red'))
-
-
-def success(msg):
-    return click.secho(msg, fg='green')
-
-
-cli = click.Group()
-
-
-@cli.command()
-@click.option('--config',
-              type=click.Choice(['production', 'development', 'testing']),
-              default='production')
-def migrate_db(config):
-    app = create_app(config=get_config(config),
-                     perform_views_init=False,
-                     perform_context_init=False)
-
-    with app.app_context():
-
-        click.echo(f'Running {config} migrations...')
-
-        router = Router(db_wrapper.database)
-        router.run()
-
-    success('DB was migrated')
-
-
-@cli.command()
-@click.option('--config',
-              type=click.Choice(['production', 'development', 'testing']),
-              default='production')
-@click.option('--gen-pass',
-              is_flag=True,
-              default=False,
-              help='Generate random password')
-def create_superuser(config, gen_pass):
-    app = create_app(config=get_config(config),
-                     perform_views_init=False,
-                     perform_context_init=False)
-
-    with app.app_context():
-        if (
-                    user_datastore.user_model
-                    .select()
-                    .join(user_datastore.UserRole)
-                    .join(user_datastore.role_model)
-                    .where(user_datastore.role_model.name == 'superuser')
-                ).exists():
-            raise click.ClickException(click.style('Superuser already exists',
-                                       fg='red'))
-
-        email = click.prompt('Enter superuser email', value_proc=validate_mail)
-
-        if gen_pass:
-            password = generate_password()
-        else:
-            password = click.prompt('Enter superuser password',
-                                    hide_input=True,
-                                    value_proc=validate_password)
-
-        role = user_datastore.find_or_create_role(
-            name='superuser', description='Superuser'
-        )
+            db.drop_all()
+            click.secho('Data base dropped.', fg='green')
+        except Exception:
+            click.secho('Data base drop error', err=True)
 
         try:
-            user = user_datastore.create_user(
-                email=email,
-                password=password,
-                roles=[role])
+            db.create_all()
+            click.secho('Data base created.', fg='green')
+        except Exception:
+            click.secho('Data base creation error', err=True)
 
-            user.save()
+    try:
+        user_datastore.create_role(name='superuser')
+        user_datastore.create_role(name='manager')
+        user_datastore.create_role(name='cashier')
+        db.session.commit()
+        click.secho('Roles created', fg='green')
+    except Exception:
+        click.secho('Error while creating roles', err=True)
 
-        except Exception as e:
-            raise error(f'Cannot create superuser. Error: {e}')
+    try:
+        base_level = Levels(name='Base', discount=0, min_balance=0)
+        db.session.add(base_level)
+        db.session.commit()
+        click.secho('Base discount created.', fg='green')
+    except Exception:
+        click.secho('Error creating base discount', err=True)
 
-        success(
-            'Superuser with email ({}) was created.{}'
-            .format(email,
-                    f'\nAutogenerated password ( {password} )'
-                    if gen_pass
-                    else '')
-        )
-
-
-@cli.command()
-@click.option('--config',
-              type=click.Choice(['production', 'development', 'testing']),
-              default='production')
-def delete_superuser(config):
-    app = create_app(config=get_config(config),
-                     perform_views_init=False,
-                     perform_context_init=False)
-
-    with app.app_context():
-        email = click.prompt('Enter superuser email', value_proc=validate_mail)
-        password = click.prompt('Enter superuser password',
-                                hide_input=True)
-
-        user = user_datastore.find_user(email=email)
-        if (user is None
-                or not user.has_role('superuser')
-                or not verify_password(password, user.password)):
-            raise error('Invalid superuser email or password')
-
-        user_datastore.delete_user(user)
-
-    success(f'Superuser with email {email} was deleted')
-
-
-@cli.command()
-@click.option('--config',
-              type=click.Choice(['production', 'development', 'testing']),
-              default='production')
-@click.option('--gen-pass',
-              is_flag=True,
-              default=False,
-              help='Generate random password')
-def edit_superuser(config, gen_pass):
-    app = create_app(config=get_config(config),
-                     perform_views_init=False,
-                     perform_context_init=False)
-
-    with app.app_context():
-        email = click.prompt('Enter superuser email',
-                             value_proc=validate_mail)
-        password = click.prompt('Enter current superuser password',
-                                hide_input=True)
-
-        user = user_datastore.find_user(email=email)
-        if (user is None
-                or not user.has_role('superuser')
-                or not verify_password(password, user.password)):
-            raise error('Invalid superuser email or password')
-
-        if gen_pass:
-            new_pass = generate_password()
-        else:
-            new_pass = click.prompt('Enter new superuser password '
-                                    '("-" to pass)',
-                                    hide_input=True,
-                                    value_proc=partial(validate_password,
-                                                       allowed_blank=True))
-
-        if new_pass:
-            user.password = hash_password(new_pass)
-
-        user.save()
-
-    success('Superuser was edited.{}'
-            .format(f'\nAutogenerated password ( {new_pass} )'
-                    if gen_pass
-                    else ''))
-
-
-@cli.command()
-@click.option('--config',
-              type=click.Choice(['production', 'development', 'testing']),
-              default='production')
-@click.option('--init-db',
-              is_flag=True,
-              default=False,
-              help='Use on first launch to create database.')
-def create_base_roles(config, init_db):
-    app = create_app(config=get_config(config),
-                     perform_views_init=False,
-                     perform_context_init=False,
-                     create_db=init_db)
-
-    with app.app_context():
-        role = user_datastore.find_or_create_role('superuser')
-        role.description = ('Can view superuser only tabs | '
-                            'Can be added only by cli | '
-                            'Cannot be deleted/edited')
-        role.save()
-        success('Role superuser was created')
-
-        role = user_datastore.find_or_create_role('manager')
-        role.description = ('Can view all tabs except superuser only | '
-                            'Cannot be deleted/edited')
-        role.save()
-        success('Role manager was created')
-        role = user_datastore.find_or_create_role('cashier')
-        role.description = ('Can view customers table |'
-                            'Can add new customers')
-        role.permissions['api'] = ['view', 'purchase']
-        success('Role cashier was created')
-        role.save()
-
-
-@cli.command()
-@click.option('--config',
-              type=click.Choice(['production', 'development', 'testing']),
-              default='production')
-def create_test_roles(config):
-    app = create_app(config=get_config(config),
-                     perform_views_init=False,
-                     perform_context_init=False)
-
-    with app.app_context():
-        super_email = 'super@test.com'
-        super_password = '01234567890'
-
-        cashier_email = 'cashier@test.com'
-        cashier_pass = '01234567890'
-
-        manager_email = 'manager@test.com'
-        manager_pass = '01234567890'
-
-        superuser = user_datastore.create_user(roles=['superuser'],
-                                               email=super_email,
-                                               password=super_password)
-        superuser.save()
-        success(f'Superuser email: {super_email}, pass: {super_password} created.')
-
-        cashier = user_datastore.create_user(roles=['cashier'],
-                                             email=cashier_email,
-                                             password=cashier_pass)
-        cashier.save()
-        success(f'Cashier email: {cashier_email}, pass: {cashier_pass} created.')
-
-        manager = user_datastore.create_user(roles=['manager'],
-                                             email=manager_email,
-                                             password=manager_pass)
-        success(f'Manager email: {manager_email}, pass: {manager_pass} created.')
-        manager.save()
+    if create_superuser:
+        try:
+            with app.app_context():
+                user = user_datastore.create_user(email='super@test.com',
+                                                  password=hash_password('01234567890'))
+                user_datastore.add_role_to_user(user, 'superuser')
+                db.session.commit()
+            click.secho('Superuser created', fg='green')
+            click.echo('email: super@test.com, password: 01234567890')
+        except Exception:
+            click.secho('Error creating superuser', err=True)
 
 
 if __name__ == '__main__':
-    cli()
+    create_roles()

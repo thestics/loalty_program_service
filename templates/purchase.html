@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Loyalty Discount</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+      <h1>Loyalty Discount</h1>
+      {% for label in labels %}
+          <div><p><b> {{ label.name }} :</b> {{ label.value }}</p></div>
+      {% endfor %}
+    <form action="" method="POST">
+        {{ form.hidden_tag() }}
+        {% if need_present %}
+            <p>
+                {{ form.present_given.label }} :
+                {{ form.present_given() }}
+            </p>
+
+        {% endif %}
+        <p>{{ form.submit() }}  {{ form.abort() }}</p>
+    </form>
+  </body>
+</html>

@@ -1,6 +1,0 @@
-{% extends 'admin/model/edit.html' %}
-{% import 'admin/custom_lib.html' as custom_lib with context %}
-
-{% block edit_form %}
-    {{ custom_lib.render_form(form, return_url, extra(), form_opts=None) }}
-{% endblock %}

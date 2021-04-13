@@ -1,86 +1,35 @@
-from peewee import (CharField, TextField, BooleanField, DateTimeField,
-                    IntegerField, ForeignKeyField, datetime)
-from playhouse.postgres_ext import BinaryJSONField
-from flask_security import RoleMixin, UserMixin
-
-from models.utils import CustomPeeweeUserDatastore, db_wrapper, BaseModel
+from __main__ import db
+from flask_security import RoleMixin, UserMixin, SQLAlchemyUserDatastore
+from flask_security.utils import hash_password
 
 
-class Role(BaseModel, RoleMixin):
-    class Meta:
-        db_table = 'roles'
+class Roles(db.Model, RoleMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(30), unique=True)
 
-    name = CharField(unique=True)
-    description = TextField(null=True)
-    permissions = BinaryJSONField(default=dict())
-
-
-class User(BaseModel, UserMixin):
-    class Meta:
-        db_table = 'users'
-
-    email = CharField(unique=True)
-    password = CharField()
-    active = BooleanField(default=True)
-    last_login_at = DateTimeField(null=True)
-    current_login_at = DateTimeField(null=True)
-    last_login_ip = CharField(max_length=100, default='127.0.0.1')
-    current_login_ip = CharField(max_length=100, default='127.0.0.1')
-    login_count = IntegerField(default=0)
-    allowed_ips = BinaryJSONField(null=True)
-    created = DateTimeField(default=datetime.datetime.now)
-    two_factor_required = BooleanField(default=False)
-    two_factor_secret = CharField(null=True)
-
-    def get_roles(self):
-        return Role.select().join(UserRoles).where(UserRoles.user == self)
-
-    def can_perform(self, view_id, action):
-        for user_role in self.roles:
-            if user_role.role.name in ('superuser', 'manager'):
-                continue
-
-            if (view_id in user_role.role.permissions
-                    and action in user_role.role.permissions[view_id]):
-                return True
-
-        return False
-
-    def has_access(self, view_id):
-        for user_role in self.roles:
-            if user_role.role.name in ('superuser', 'manager'):
-                continue
-
-            if view_id in user_role.role.permissions:
-                return True
-
-        return False
-
-    def is_superuser(self):
-        return self.has_role('superuser')
-
-    def is_manager(self):
-        return self.has_role('manager')
+    def __repr__(self):
+        return self.name
 
 
-class UserRoles(BaseModel):
-    class Meta:
-        db_table = 'user_roles'
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    card_id = db.Column(db.String(10), unique=True, index=True)
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255), nullable=False)
 
-        indexes = (
-            (('user', 'role',), True),
-        )
+    roles = db.relationship('Roles', secondary='roles_users', backref=db.backref('users', lazy='dynamic'))
 
-    user = ForeignKeyField(User, backref='roles')
-    role = ForeignKeyField(Role, backref='users')
+    active = db.Column(db.Boolean, default=True)
 
-    name = property(lambda self: self.role.name)
-    description = property(lambda self: self.role.description)
+    def __repr__(self):
+        return f"{self.email}: {self.roles}"
+
+    def set_password(self, password):
+        self.password = hash_password(password)
 
 
-user_datastore = CustomPeeweeUserDatastore(db_wrapper.database,
-                                           User,
-                                           Role,
-                                           UserRoles)
+roles_users = db.Table('roles_users',
+                       db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+                       db.Column('role_id', db.Integer(), db.ForeignKey('roles.id')))
 
-admin_tables = (User, Role, UserRoles)
+user_datastore = SQLAlchemyUserDatastore(db, User, Roles)

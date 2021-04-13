@@ -1,112 +1,42 @@
-import datetime
-import traceback
-
-from flask import Flask, url_for, session, flash, redirect, request
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_admin import Admin
 from flask_security import Security
-from flask_security.core import _context_processor
-from flask_admin import Admin, helpers as admin_helpers
 
-from models.admin import user_datastore, admin_tables
-from models.loyalty import loyalty_tables
-from models.utils import db_wrapper, init_db
-from models.loyalty import ErrorLog
-from config import ProductionConfig, DevelopmentConfig
-from src.login import CustomLoginForm, create_blueprint
-from src.views import init_views, IndexView
-from common.utils import camel2snake
-
+app = Flask(__name__)
+db = SQLAlchemy()
 security = Security()
-databases = (db_wrapper,)
 
-admin = Admin(base_template='admin/custom_master.html',
-              template_mode='bootstrap3',
-              index_view=IndexView(url='/'))
+from models.admin import user_datastore
 
+from views import admin as admin_views
+from views import manager as manager_views
+from views import cashier as cashier_views
 
-def create_app(config=None,
-               perform_views_init=True,
-               perform_context_init=True,
-               create_db=False):
-    config = config or ProductionConfig
-
-    app = Flask(config.PROJECT, instance_relative_config=True)
-
-    app.config.from_object(config)
-
-    app.config['DATABASE'] = app.config['DB']
-    db_wrapper.init_app(app)
-    if create_db:
-        init_db(admin_tables + loyalty_tables)
-
-    sec = security.init_app(app,
-                            datastore=user_datastore,
-                            login_form=CustomLoginForm,
-                            register_blueprint=False)
-    app.register_blueprint(create_blueprint(sec, __name__))
-    app.context_processor(_context_processor)
-
-    admin.init_app(app)
-
-    if perform_views_init:
-        init_views(admin)
-
-    if perform_context_init:
-        _init_context_processors(app, admin, sec)
-
-    return app
+from routes.root import root
+from routes.event import create_event
 
 
-def _init_context_processors(app, admin, security):
-    @security.context_processor
-    def security_context_processor():
-        return dict(
-            admin_base_template=admin.base_template,
-            admin_view=admin.index_view,
-            h=admin_helpers,
-            get_url=url_for
-        )
+app.config['SQLALCHEMY_DATABASE_URI'] = r'sqlite:///loyalty.db'
+app.config['SECRET_KEY'] = 'mysecret'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECURITY_PASSWORD_SALT'] = 'test111'
 
-    @app.context_processor
-    def app_context_processors():
-        return dict(
-            camel2snake=camel2snake,
-            hasattr=hasattr
-        )
+db.init_app(app)
+security.init_app(app, user_datastore)
 
-    session_lifetime = datetime.timedelta(minutes=app.config['SESSION_TIMEOUT'])
+admin = Admin(app, name='Loyalty', index_view=admin_views.DashboardView(), template_mode='bootstrap3')
 
-    @app.before_request
-    def make_session_permanent():
-        session.permanent = True
-        app.permanent_session_lifetime = session_lifetime
+admin.add_view(admin_views.user_view)
 
-    @app.errorhandler(Exception)
-    def handle_exceptions(exc):
-        flash('Unexpected error: {}'.format(exc), 'error')
-        ErrorLog.create(request_data=request.data,
-                        request_ip=request.remote_addr,
-                        request_url=request.url,
-                        request_method=request.method,
-                        error=str(exc),
-                        traceback=traceback.format_exc())
+admin.add_view(manager_views.manager_level_view)
+admin.add_view(manager_views.manager_client_view)
+admin.add_view(manager_views.manager_event_view)
 
-        return redirect(url_for('admin.index'))
+admin.add_view(cashier_views.cashier_client_view)
+admin.add_view(cashier_views.cashier_event)
 
-    # open db connections
-    @app.before_request
-    def _db_connection():
-        for db in databases:
-            if db.database.is_closed():
-                db.database.connect()
-
-    # close db connections
-    @app.teardown_request
-    def _db_close(exc):
-        for db in databases:
-            if not db.database.is_closed():
-                db.database.close()
-
+admin.add_link(admin_views.LogoutMenuLink(name='Logout', url='/logout'))
 
 if __name__ == '__main__':
-    app = create_app(DevelopmentConfig)
     app.run()

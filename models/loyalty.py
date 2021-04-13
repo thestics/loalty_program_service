@@ -1,65 +1,51 @@
-from peewee import (CharField, DecimalField, ForeignKeyField,
-                    BigIntegerField, DateTimeField, BooleanField, TextField,
-                    IntegerField,
-                    DateField, datetime as peewee_datetime)
-from playhouse.postgres_ext import BinaryJSONField
-
-from models.utils import BaseModel
+from __main__ import db
+from datetime import datetime
+from settings import constants
 
 
-class DiscountLevel(BaseModel):
-    class Meta:
-        db_table = "discount_levels"
-        order_by = ("-created",)
+class Levels(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    discount = db.Column(db.Float, nullable=False, default=0,
+                        comment="Discount percent. Should be in range [0, 100)")
+    min_balance = db.Column(db.Float, nullable=False, default=0,
+                            comment="Minimum balance needed to acquire this discount.")
 
-    name = CharField()
-    minimal_amount = DecimalField()
-    created = DateTimeField(default=peewee_datetime.datetime.now)
-    # extra_data = BinaryJSONField(default=dict())
-    processing = BooleanField(default=False, null=True)
-    discount_percent = IntegerField(default=0, help_text='in [0, 1]')
-
-    @classmethod
-    def get_by_amount(cls, amount):
-        try:
-            return cls.select().where(cls.minimal_amount <= amount).get()
-        except cls.DoesNotExist:
-            return None
+    def __repr__(self):
+        return f"{self.name}: {self.discount * 100}%"
 
 
-class Customer(BaseModel):
-    class Meta:
-        db_table = "customers"
+class Client(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    card_id = db.Column(db.String(10), nullable=False, unique=True, index=True)
 
-    name = CharField()
-    card_id = CharField(unique=True, null=False, index=True)
-    phone = BigIntegerField()
-    amount_of_purchases = DecimalField(default=0)
-    discount_level = ForeignKeyField(DiscountLevel, default=1)
-    birthday = DateField()
-    address = CharField(null=True)
-    created = DateTimeField(default=peewee_datetime.datetime.now)
-    updated = DateTimeField(null=True)
+    name = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(13), nullable=False)
+    birth_date = db.Column(db.Date, nullable=False)
+    balance = db.Column(db.Float, default=0)
 
-    @staticmethod
-    def get_for_update(card_id):
-        return Customer.select().where(Customer.card_id == card_id).for_update().first()
+    level_id = db.Column(db.Integer, db.ForeignKey(Levels.id), nullable=False, default=1)
+    level = db.relationship(Levels)
+
+    vip_discount = db.Column(db.Float, nullable=False, default=0,
+                             comment="Discount multiplier. Should be in range [0, 100)")
+
+    last_present_date = db.Column(db.Date, nullable=False, default=datetime(2000, 1, 1))
+
+    def __repr__(self):
+        return self.name
 
     def update_balance(self, amount):
-        Customer.update(balance=Customer.balance + amount).where(Customer.id == self.id).execute()
+        self.balance += amount
+        self.level = Levels.query.filter(self.balance >= Levels.min_balance).order_by(Levels.min_balance).first()
 
+    def discount(self, amount):
+        base_discount = amount - amount * self.level.discount / 100
+        vip_discount = base_discount - base_discount * self.vip_discount / 100
+        return vip_discount
 
-class ErrorLog(BaseModel):
-    class Meta:
-        db_table = "error_logs"
-
-    request_data = BinaryJSONField()
-    request_ip = CharField()
-    request_url = TextField()
-    request_method = CharField()
-    error = TextField()
-    traceback = TextField(null=True)
-    created = DateTimeField(default=peewee_datetime, index=True)
-
-
-loyalty_tables = (DiscountLevel, Customer, ErrorLog)
+    def need_present(self):
+        bd_current_year = self.birth_date.replace(year=datetime.now().year)
+        if abs((datetime.date(datetime.today()) - bd_current_year).days) < constants.PRESENT_DAYS_OFFSET:
+            return self.last_present_date.year < datetime.today().year
+        return False
