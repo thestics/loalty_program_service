@@ -11,6 +11,12 @@ from __main__ import db
 
 class ManagerLevelView(ModelView):
 
+    column_filters = (
+        'name',
+        'discount',
+        'min_balance'
+    )
+
     form_args = dict(
         name=dict(
             validators=[
@@ -55,6 +61,19 @@ class ManagerClientsView(ModelView):
         )
     )
 
+    column_list = (
+        'card_id',
+        'name',
+        'level',
+        'vip_discount',
+        'phone',
+        'birth_date',
+        'balance',
+        'last_present_date',
+    )
+
+    column_filters = column_list
+
     form_excluded_columns = (
         'level',
         'card_id',
@@ -85,7 +104,21 @@ class ManagerEventView(ModelView):
         'client',
         'sum_before',
         'sum_after',
-        'present_given'
+        'present_given',
+        'closed',
+        'success',
+    )
+
+    column_filters = (
+        'user.email',
+        'user.card_id',
+        'client.name',
+        'client.card_id',
+        'sum_before',
+        'sum_after',
+        'present_given',
+        'closed',
+        'success',
     )
 
     def is_accessible(self):

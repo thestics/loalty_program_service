@@ -38,6 +38,8 @@ class UserView(ModelView):
         'active'
     )
 
+    column_filters = column_list
+
     form_edit_rules = ('active', )
     form_create_rules = ('roles', 'email', 'card_id', 'password', 'password_validation',)
 

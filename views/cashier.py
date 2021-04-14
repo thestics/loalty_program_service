@@ -25,6 +25,11 @@ class CashierClientView(ModelView):
         'vip_discount',
     )
 
+    column_filters = (
+        'name',
+        'card_id',
+    )
+
     form_excluded_columns = (
         'level',
         'balance',
