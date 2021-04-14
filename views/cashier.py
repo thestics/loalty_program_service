@@ -1,8 +1,9 @@
 from flask_admin.contrib.sqla.view import ModelView, func
 from flask_admin import expose
+from flask_admin.form import rules
 from flask_admin.model.template import EndpointLinkRowAction
 from flask_security import current_user
-from flask import redirect, request, render_template, flash
+from flask import redirect, request, flash
 from wtforms import BooleanField, SubmitField, validators
 from flask_wtf import FlaskForm
 
@@ -14,7 +15,7 @@ from __main__ import db
 class CashierClientView(ModelView):
 
     can_create = True
-    can_edit = False
+    can_edit = True
     can_delete = False
 
     column_list = (
@@ -30,6 +31,10 @@ class CashierClientView(ModelView):
         'vip_discount',
         'last_present_date'
     )
+
+    form_edit_rules = [
+        rules.FieldSet(('card_id',), 'New card')
+    ]
 
     form_args = dict(
         card_id=dict(
@@ -124,8 +129,8 @@ class CashierEvent(ModelView):
             return redirect('/admin/events')
 
         if request.method == 'GET':
-            return render_template('purchase.html', form=form,
-                                   labels=event.get_form_labels(), need_present=event.client.need_present())
+            return self.render('purchase.html', form=form,
+                                labels=event.get_form_labels(), need_present=event.client.need_present())
 
         if request.method == 'POST':
             if form.validate_on_submit():

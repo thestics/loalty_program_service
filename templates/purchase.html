@@ -1,25 +1,26 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Loyalty Discount</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/static/bootstrap.min.css" rel="stylesheet" media="screen">
-  </head>
-  <body>
+{% extends 'admin/base.html' %}
+{% block body %}
       <h1>Loyalty Discount</h1>
+    <table style="width:100%">
       {% for label in labels %}
-          <div><p><b> {{ label.name }} :</b> {{ label.value }}</p></div>
+          <tr>
+              <th><b> {{ label.name }} </b></th>
+              <th>{{ label.value }} </th>
+          </tr>
       {% endfor %}
-    <form action="" method="POST">
-        {{ form.hidden_tag() }}
-        {% if need_present %}
-            <p>
-                {{ form.present_given.label }} :
-                {{ form.present_given() }}
-            </p>
 
-        {% endif %}
-        <p>{{ form.submit() }}  {{ form.abort() }}</p>
-    </form>
-  </body>
-</html>
+        <form action="" method="POST">
+            {{ form.hidden_tag() }}
+            {% if need_present %}
+                <tr>
+                    <th>{{ form.present_given.label }} </th>
+                    <th>{{ form.present_given() }}</th>
+                </tr>
+
+            {% endif %}
+        <tr>
+             <th>{{ form.submit() }}  {{ form.abort() }}</th>
+        </tr>
+        </form>
+    </table>
+{% endblock %}
