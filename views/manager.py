@@ -85,7 +85,6 @@ class ManagerEventView(ModelView):
         'client',
         'sum_before',
         'sum_after',
-        'need_present',
         'present_given'
     )
 

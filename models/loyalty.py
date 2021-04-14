@@ -12,7 +12,7 @@ class Levels(db.Model):
                             comment="Minimum balance needed to acquire this discount.")
 
     def __repr__(self):
-        return f"{self.name}: {self.discount * 100}%"
+        return f"{self.name}: {self.discount}%"
 
 
 class Client(db.Model):
@@ -37,7 +37,7 @@ class Client(db.Model):
 
     def update_balance(self, amount):
         self.balance += amount
-        self.level = Levels.query.filter(self.balance >= Levels.min_balance).order_by(Levels.min_balance).first()
+        self.level = Levels.query.filter(self.balance >= Levels.min_balance).order_by(Levels.min_balance.desc()).first()
 
     def discount(self, amount):
         base_discount = amount - amount * self.level.discount / 100

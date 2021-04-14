@@ -89,7 +89,6 @@ class CashierEvent(ModelView):
         'client',
         'sum_before',
         'sum_after',
-        'need_present',
         'event_time'
     )
 
