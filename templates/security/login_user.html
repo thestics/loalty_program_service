@@ -1,6 +1,27 @@
-<form action="{{ url_for_security('login') }}" method="POST">
-  {{ login_user_form.hidden_tag() }}
-  {{ login_user_form.email(placeholder='Email') }}
-  {{ login_user_form.password(placeholder='Password') }}
-  {{ login_user_form.submit }}
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/static/style.css" type="text/css">
+</head>
+<body>
+    <div class="form">
+        <h1>Login</h1>
+        <form action="{{ url_for_security('login') }}" method="POST">
+          <div class="input-form">
+            {{ login_user_form.hidden_tag() }}
+          </div>
+          <div class="input-form">
+          {{ login_user_form.email(placeholder='Email') }}
+          </div>
+          <div class="input-form">
+          {{ login_user_form.password(placeholder='Password') }}
+          </div>
+          <div class="input-form">
+          {{ login_user_form.submit }}
+          </div>
+        </form>
+    </div>
+</body>
+</html>

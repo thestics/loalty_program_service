@@ -1,26 +1,32 @@
 {% extends 'admin/base.html' %}
 {% block body %}
       <h1>Loyalty Discount</h1>
-    <table style="width:100%">
+    <table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Value</th>
+        </tr>
+    </thead>
       {% for label in labels %}
           <tr>
-              <th><b> {{ label.name }} </b></th>
+              <th>{{ label.name }} </th>
               <th>{{ label.value }} </th>
           </tr>
       {% endfor %}
+    </table>
 
-        <form action="" method="POST">
+    <form action="" method="POST" class="form">
             {{ form.hidden_tag() }}
             {% if need_present %}
-                <tr>
-                    <th>{{ form.present_given.label }} </th>
-                    <th>{{ form.present_given() }}</th>
-                </tr>
+
+                <div>
+                {{ form.present_given.label }} {{ form.present_given() }}
+                </div>
 
             {% endif %}
-        <tr>
-             <th>{{ form.submit() }}  {{ form.abort() }}</th>
-        </tr>
-        </form>
-    </table>
+
+             {{ form.submit() }}  {{ form.abort() }}
+
+    </form>
 {% endblock %}
