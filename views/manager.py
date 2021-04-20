@@ -6,7 +6,7 @@ from wtforms import validators
 
 import models.loyalty as loyalty_models
 from models.event import Events
-from __main__ import db
+from exts import db
 
 
 class ManagerLevelView(ModelView):

@@ -9,7 +9,7 @@ from flask_wtf import FlaskForm
 
 import models.loyalty as loyalty_models
 import models.event as event_models
-from __main__ import db
+from exts import db
 
 
 class CashierClientView(ModelView):

@@ -1,4 +1,4 @@
-from __main__ import db
+from exts import db
 from flask_security import RoleMixin, UserMixin, SQLAlchemyUserDatastore
 from flask_security.utils import hash_password
 

@@ -2,7 +2,7 @@ from .admin import User
 from .loyalty import Client
 from datetime import datetime
 
-from __main__ import db
+from exts import db
 
 
 class Events(db.Model):

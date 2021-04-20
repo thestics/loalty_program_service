@@ -1,4 +1,4 @@
-from __main__ import db
+from exts import db
 from datetime import datetime
 from settings import constants
 

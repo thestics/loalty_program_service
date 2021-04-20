@@ -1,9 +1,7 @@
-from __main__ import app
 from flask_security import current_user
-from flask import redirect
+from flask import redirect, app
 
 
-@app.route('/')
 def root():
     if current_user.is_active and\
        current_user.is_authenticated:

@@ -1,10 +1,9 @@
 from flask import request, jsonify
 
-from __main__ import app, db
+from exts import db
 from models.event import Events
 
 
-@app.route('/api/create_event', methods=['PUT'])
 def create_event():
     """
     JSON data with keys

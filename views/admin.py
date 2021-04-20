@@ -7,7 +7,7 @@ from flask import redirect
 from wtforms import validators, fields
 
 import models.admin as admin_models
-from __main__ import db
+from exts import db
 
 
 class UserView(ModelView):
