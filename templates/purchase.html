@@ -19,13 +19,11 @@
     <form action="" method="POST" class="form">
             {{ form.hidden_tag() }}
             {% if need_present %}
-
                 <div>
                 {{ form.present_given.label }} {{ form.present_given() }}
                 </div>
 
             {% endif %}
-
              {{ form.submit() }}  {{ form.abort() }}
 
     </form>
