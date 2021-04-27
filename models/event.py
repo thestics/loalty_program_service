@@ -35,6 +35,7 @@ class Events(db.Model):
         self.client.update_balance(self.sum_after)
         if present_given:
             self.client.last_present_date = datetime.today()
+            self.present_given = True
         self.closed = True
         self.success = True
         db.session.add(self.client)
@@ -55,7 +56,7 @@ class Events(db.Model):
         )
 
         if self.client.vip_discount > 0:
-            vip_discount = (dict(name="Vip Discount", value=str(self.client.vip_discount)), )
+            vip_discount = (dict(name="Vip Discount", value=str(self.client.vip_discount) + '%'), )
             labels += vip_discount
 
         final_sum = (dict(name="Sum after discount", value=str(self.sum_after)), )
