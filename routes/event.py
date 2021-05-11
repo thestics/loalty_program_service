@@ -11,11 +11,17 @@ def create_event():
         "sum" - float value
     """
     try:
+        p_sum = float(request.json['sum'])
+
+        if p_sum <= 0:
+            return jsonify(dict(status='error', error="Negative or zero purchase")), 400
+
         event = Events.from_card_id(
             request.json['user_card_id'],
             request.json['client_card_id'],
-            float(request.json['sum'])
+            p_sum
         )
+
         db.session.add(event)
         db.session.commit()
         return jsonify(dict(status='success')), 200

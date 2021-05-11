@@ -27,24 +27,24 @@ def create_roles(init_db, create_superuser):
         except Exception:
             click.secho('Data base creation error', err=True)
 
-    try:
-        with app.app_context():
-            user_datastore.create_role(name='superuser')
-            user_datastore.create_role(name='manager')
-            user_datastore.create_role(name='cashier')
-            db.session.commit()
-        click.secho('Roles created', fg='green')
-    except Exception:
-        click.secho('Error while creating roles', err=True)
+        try:
+            with app.app_context():
+                user_datastore.create_role(name='superuser')
+                user_datastore.create_role(name='manager')
+                user_datastore.create_role(name='cashier')
+                db.session.commit()
+            click.secho('Roles created', fg='green')
+        except Exception:
+            click.secho('Error while creating roles', err=True)
 
-    try:
-        with app.app_context():
-            base_level = Levels(name='Base', discount=0, min_balance=0)
-            db.session.add(base_level)
-            db.session.commit()
-        click.secho('Base discount created.', fg='green')
-    except Exception:
-        click.secho('Error creating base discount', err=True)
+        try:
+            with app.app_context():
+                base_level = Levels(name='Base', discount=0, min_balance=0)
+                db.session.add(base_level)
+                db.session.commit()
+            click.secho('Base discount created.', fg='green')
+        except Exception:
+            click.secho('Error creating base discount', err=True)
 
     if create_superuser:
         try:
